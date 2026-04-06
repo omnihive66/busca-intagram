@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["apify-client", "proxy-agent"],
+  serverExternalPackages: [],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.cdninstagram.com" },
