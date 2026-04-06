@@ -8,6 +8,12 @@ import { put, list, del } from "@vercel/blob";
 
 const IS_LOCAL = !process.env.BLOB_READ_WRITE_TOKEN;
 
+async function blobFetch(url: string): Promise<Response> {
+  return fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+  });
+}
+
 // ─── LOCAL FILESYSTEM (dev) ────────────────────────────────────────────────
 
 const DATA_DIR = path.join(process.cwd(), ".local-data");
@@ -38,7 +44,8 @@ export async function saveCatalog(instagram: string, properties: Property[]) {
   }
 
   return put(`catalogs/${instagram}.json`, json, {
-    access: "public",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    access: "private" as any,
     contentType: "application/json",
     addRandomSuffix: false,
   });
@@ -56,7 +63,7 @@ export async function loadCatalog(instagram: string): Promise<Property[]> {
 
     const { blobs } = await list({ prefix: `catalogs/${instagram}.json` });
     if (!blobs.length) return [];
-    const res = await fetch(blobs[0].url);
+    const res = await blobFetch(blobs[0].url);
     const data = await res.json();
     return data.properties || [];
   } catch {
@@ -80,7 +87,7 @@ export async function loadAllCatalogs(): Promise<Property[]> {
     const { blobs } = await list({ prefix: "catalogs/" });
     const all: Property[] = [];
     for (const blob of blobs) {
-      const res = await fetch(blob.url);
+      const res = await blobFetch(blob.url);
       const data = await res.json();
       if (data.properties) all.push(...data.properties);
     }
@@ -102,7 +109,8 @@ export async function saveJob(job: ScrapeJob) {
   }
 
   return put(`jobs/${job.id}.json`, json, {
-    access: "public",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    access: "private" as any,
     contentType: "application/json",
     addRandomSuffix: false,
   });
@@ -119,7 +127,7 @@ export async function loadJob(jobId: string): Promise<ScrapeJob | null> {
 
     const { blobs } = await list({ prefix: `jobs/${jobId}.json` });
     if (!blobs.length) return null;
-    const res = await fetch(blobs[0].url);
+    const res = await blobFetch(blobs[0].url);
     return await res.json();
   } catch {
     return null;
