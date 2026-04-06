@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const header = fields.join(",");
     const rows = properties.map((p) =>
       fields.map((f) => {
-        const val = (p as Record<string, unknown>)[f];
+        const val = (p as unknown as Record<string, unknown>)[f];
         if (val === null || val === undefined) return "";
         const str = String(val).replace(/"/g, '""');
         return str.includes(",") || str.includes('"') || str.includes("\n")

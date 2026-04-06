@@ -11,6 +11,16 @@ export interface InstagramPost {
   url_post: string;
 }
 
+interface ApifyInstagramItem {
+  id?: string;
+  displayUrl?: string;
+  images?: string[];
+  caption?: string;
+  timestamp?: string;
+  likesCount?: number;
+  url?: string;
+}
+
 export async function scrapeInstagram(
   username: string,
   maxPosts: number
@@ -20,14 +30,20 @@ export async function scrapeInstagram(
     resultsLimit: maxPosts,
   });
 
+  const dataset = client.dataset(run.defaultDatasetId);
+  const { items } = await dataset.listItems({ limit: maxPosts });
+
   const posts: InstagramPost[] = [];
 
-  for await (const item of client.dataset(run.defaultDatasetId).iterateItems()) {
-    const images: string[] = item.images?.length
-      ? item.images
-      : item.displayUrl
-      ? [item.displayUrl]
-      : [];
+  for (const raw of items) {
+    const item = raw as ApifyInstagramItem;
+
+    const images: string[] =
+      Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : item.displayUrl
+        ? [item.displayUrl]
+        : [];
 
     for (const imgUrl of images) {
       posts.push({
