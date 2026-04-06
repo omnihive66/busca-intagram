@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             id: post.id,
             instagram,
             url_imagem: post.url_imagem,
+            imagens: post.imagens,
             legenda_original: post.legenda_original,
             data: post.data,
             likes: post.likes,

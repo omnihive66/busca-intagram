@@ -5,6 +5,7 @@ const client = new ApifyClient({ token: process.env.APIFY_API_KEY });
 export interface InstagramPost {
   id: string;
   url_imagem: string;
+  imagens: string[];
   legenda_original: string;
   data: string;
   likes: number;
@@ -39,23 +40,24 @@ export async function scrapeInstagram(
   for (const raw of items) {
     const item = raw as ApifyInstagramItem;
 
-    const images: string[] =
+    const imagens: string[] =
       Array.isArray(item.images) && item.images.length > 0
         ? item.images
         : item.displayUrl
         ? [item.displayUrl]
         : [];
 
-    for (const imgUrl of images) {
-      posts.push({
-        id: `${item.id || Date.now()}_${posts.length}`,
-        url_imagem: imgUrl,
-        legenda_original: item.caption || "",
-        data: item.timestamp || "",
-        likes: item.likesCount || 0,
-        url_post: item.url || "",
-      });
-    }
+    if (imagens.length === 0) continue;
+
+    posts.push({
+      id: `${item.id || Date.now()}_${posts.length}`,
+      url_imagem: imagens[0],
+      imagens,
+      legenda_original: item.caption || "",
+      data: item.timestamp || "",
+      likes: item.likesCount || 0,
+      url_post: item.url || "",
+    });
   }
 
   return posts;

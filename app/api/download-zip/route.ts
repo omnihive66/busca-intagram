@@ -7,16 +7,18 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function buildDescricaoTxt(p: Property, index: number): string {
+  const totalImagens = (p.imagens?.length) || 1;
   const lines = [
     `=== IMÓVEL ${String(index).padStart(3, "0")} ===`,
     ``,
-    `Título:      ${p.titulo}`,
-    `Categoria:   ${p.categoria}`,
-    `Status:      ${p.status}`,
-    `Preço:       ${p.preco || "Não informado"}`,
-    `Quartos:     ${p.quartos ?? "Não informado"}`,
-    `Bairro:      ${p.bairro || "Não informado"}`,
-    `Contato:     ${p.contato || "Não informado"}`,
+    `Título:        ${p.titulo}`,
+    `Categoria:     ${p.categoria}`,
+    `Status:        ${p.status}`,
+    `Preço:         ${p.preco || "Não informado"}`,
+    `Quartos:       ${p.quartos ?? "Não informado"}`,
+    `Bairro:        ${p.bairro || "Não informado"}`,
+    `Contato:       ${p.contato || "Não informado"}`,
+    `Fotos:         ${totalImagens} imagem(ns) nesta pasta`,
     ``,
     `Descrição:`,
     p.descricao,
@@ -26,10 +28,10 @@ function buildDescricaoTxt(p: Property, index: number): string {
     ``,
     `--- Dados originais ---`,
     `Perfil Instagram: @${p.instagram}`,
-    `Post:        ${p.url_post}`,
-    `Likes:       ${p.likes}`,
-    `Data post:   ${p.data ? new Date(p.data).toLocaleDateString("pt-BR") : "—"}`,
-    `Catalogado:  ${new Date(p.catalogado_em).toLocaleString("pt-BR")}`,
+    `Post:          ${p.url_post}`,
+    `Likes:         ${p.likes}`,
+    `Data post:     ${p.data ? new Date(p.data).toLocaleDateString("pt-BR") : "—"}`,
+    `Catalogado em: ${new Date(p.catalogado_em).toLocaleString("pt-BR")}`,
     ``,
     `Legenda original:`,
     p.legenda_original || "(sem legenda)",
@@ -44,18 +46,21 @@ function slugify(str: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
+    .slice(0, 50);
 }
 
 async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
     if (!res.ok) return null;
-    const arr = await res.arrayBuffer();
-    return Buffer.from(arr);
+    return Buffer.from(await res.arrayBuffer());
   } catch {
     return null;
   }
+}
+
+function getExt(url: string): string {
+  return url.match(/\.(jpg|jpeg|png|webp)/i)?.[1]?.toLowerCase() || "jpg";
 }
 
 export async function GET(req: NextRequest) {
@@ -74,21 +79,23 @@ export async function GET(req: NextRequest) {
   }
 
   const zip = new JSZip();
-  const pasta = zip.folder("catalogo_imoveis")!;
+  const raiz = zip.folder("catalogo_imoveis")!;
 
-  // JSON completo
-  pasta.file(
+  // Índice geral na raiz
+  raiz.file(
     "imoveis.json",
-    JSON.stringify({ total: properties.length, gerado_em: new Date().toISOString(), imoveis: properties }, null, 2)
+    JSON.stringify(
+      { total: properties.length, gerado_em: new Date().toISOString(), imoveis: properties },
+      null,
+      2
+    )
   );
 
-  // CSV
   const csvFields: (keyof Property)[] = [
     "titulo", "categoria", "status", "preco", "quartos", "bairro",
     "contato", "descricao", "destaques", "instagram", "url_post",
     "likes", "data", "catalogado_em",
   ];
-  const csvHeader = csvFields.join(",");
   const csvRows = properties.map((p) =>
     csvFields.map((f) => {
       const val = p[f];
@@ -97,27 +104,30 @@ export async function GET(req: NextRequest) {
       return str.includes(",") || str.includes('"') || str.includes("\n") ? `"${str}"` : str;
     }).join(",")
   );
-  pasta.file("imoveis.csv", [csvHeader, ...csvRows].join("\n"));
+  raiz.file("imoveis.csv", [csvFields.join(","), ...csvRows].join("\n"));
 
-  // Pasta de imagens
-  const imgFolder = pasta.folder("imagens")!;
-
+  // Uma pasta por imóvel (carrossel)
   for (let i = 0; i < properties.length; i++) {
     const p = properties[i];
     const num = String(i + 1).padStart(3, "0");
     const slug = slugify(p.titulo);
-    const baseName = `${num}_${slug}`;
+    const folderName = `${num}_${slug}`;
+    const pasta = raiz.folder(folderName)!;
 
-    // Arquivo de descrição
-    imgFolder.file(`${baseName}.txt`, buildDescricaoTxt(p, i + 1));
+    // Descrição do imóvel
+    pasta.file("descricao.txt", buildDescricaoTxt(p, i + 1));
 
-    // Imagem
-    const imageUrl = p.url_imagem_blob || p.url_imagem;
-    const buffer = await fetchImageBuffer(imageUrl);
-    if (buffer) {
-      // Detecta extensão pela URL
-      const ext = imageUrl.match(/\.(jpg|jpeg|png|webp)/i)?.[1]?.toLowerCase() || "jpg";
-      imgFolder.file(`${baseName}.${ext}`, buffer);
+    // Todas as imagens do carrossel
+    const urls: string[] = p.imagens?.length
+      ? p.imagens
+      : [p.url_imagem_blob || p.url_imagem];
+
+    for (let j = 0; j < urls.length; j++) {
+      const buffer = await fetchImageBuffer(urls[j]);
+      if (buffer) {
+        const ext = getExt(urls[j]);
+        pasta.file(`imagem_${String(j + 1).padStart(2, "0")}.${ext}`, buffer);
+      }
     }
   }
 

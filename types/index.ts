@@ -11,6 +11,7 @@ export interface Property {
   bairro: string | null;
   contato: string | null;
   url_imagem: string;
+  imagens: string[];
   url_imagem_blob?: string;
   legenda_original: string;
   data: string;
