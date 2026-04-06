@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
     ? `catalogo_${instagram}.zip`
     : `catalogo_imoveis_completo.zip`;
 
-  return new Response(zipBuffer, {
+  return new Response(new Uint8Array(zipBuffer), {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${filename}"`,

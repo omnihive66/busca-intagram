@@ -25,7 +25,7 @@ export async function describeProperty(
   caption: string,
   instagram: string,
   retries = 3
-): Promise<Omit<Property, "id" | "instagram" | "url_imagem" | "legenda_original" | "data" | "likes" | "url_post" | "catalogado_em">> {
+): Promise<Omit<Property, "id" | "instagram" | "url_imagem" | "imagens" | "legenda_original" | "data" | "likes" | "url_post" | "catalogado_em">> {
   const fallback = {
     titulo: "Imóvel disponível",
     categoria: "Outros" as const,
