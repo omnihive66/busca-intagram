@@ -28,6 +28,14 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"catalog" | "accounts">("catalog");
   const abortRef = useRef<AbortController | null>(null);
 
+  // Extrai só o username de URL completa ou @usuario
+  function parseUsername(input: string): string {
+    const clean = input.trim().replace(/^@/, "");
+    // ex: https://www.instagram.com/ricardoeadaocorretores/
+    const match = clean.match(/instagram\.com\/([^/?#]+)/);
+    return match ? match[1] : clean;
+  }
+
   useEffect(() => {
     fetchAccounts();
     fetchProperties();
@@ -54,6 +62,8 @@ export default function Home() {
 
   async function startScrape() {
     if (!newInstagram.trim()) return;
+    const username = parseUsername(newInstagram);
+    setNewInstagram(username);
     setScraping(true);
     setProgress({ type: "status", message: "Iniciando...", step: 1, total_steps: 3 });
     setProgressPercent(0);
@@ -64,7 +74,7 @@ export default function Home() {
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instagram: newInstagram.trim(), maxPosts }),
+        body: JSON.stringify({ instagram: username, maxPosts }),
         signal: abortRef.current.signal,
       });
 
@@ -206,7 +216,7 @@ export default function Home() {
                   type="text"
                   placeholder="perfil_do_instagram"
                   value={newInstagram}
-                  onChange={(e) => setNewInstagram(e.target.value.replace("@", ""))}
+                  onChange={(e) => setNewInstagram(e.target.value)}
                   disabled={scraping}
                   onKeyDown={(e) => e.key === "Enter" && !scraping && startScrape()}
                   className="flex-1 py-2.5 pr-3 text-sm outline-none bg-transparent"
