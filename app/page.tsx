@@ -150,6 +150,14 @@ export default function Home() {
     window.open(url, "_blank");
   }
 
+  function downloadZip() {
+    const base = "/api/download-zip";
+    const url = selectedAccount !== "todos"
+      ? base + "?instagram=" + selectedAccount
+      : base;
+    window.open(url, "_blank");
+  }
+
   const filtered = properties.filter((p) => {
     if (filterCategory !== "Todos" && p.categoria !== filterCategory) return false;
     if (filterStatus !== "Todos" && p.status !== filterStatus) return false;
@@ -198,6 +206,13 @@ export default function Home() {
               className="text-sm px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600"
             >
               ⬇ JSON
+            </button>
+            <button
+              onClick={downloadZip}
+              disabled={properties.length === 0}
+              className="text-sm px-3 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              ⬇ ZIP com Imagens
             </button>
           </div>
         </div>

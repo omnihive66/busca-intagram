@@ -26,7 +26,8 @@ export async function scrapeInstagram(
   maxPosts: number
 ): Promise<InstagramPost[]> {
   const run = await client.actor("shu8hvrXbJbY3Eb9W").call({
-    usernames: [username],
+    directUrls: [`https://www.instagram.com/${username}/`],
+    resultsType: "posts",
     resultsLimit: maxPosts,
   });
 
