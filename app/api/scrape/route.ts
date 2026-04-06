@@ -4,7 +4,7 @@ import { describeProperty } from "@/lib/claude";
 import { saveCatalog, loadCatalog } from "@/lib/storage";
 import type { Property } from "@/types";
 
-export const maxDuration = 800;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
